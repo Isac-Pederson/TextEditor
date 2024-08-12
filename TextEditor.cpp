@@ -56,14 +56,14 @@ void TextEditor::toggleCursorState(){
     mvaddch(cursor.row, cursor.col, cursorIcon);
     refresh();
 }
-
+//continue working on this bs tomorrow >:(
 void TextEditor::deleteCharacter(){
     if(lines[cursor.row].length() > 0){
         lines[cursor.row].erase(--cursor.col);
     }
 }
 
-void signalHandler(int signal){}
+// void signalHandler(int signal){}
 
 void TextEditor::run(){
     bool currentInstance = this;
@@ -72,37 +72,42 @@ void TextEditor::run(){
     cbreak(); // Disable line buffering
     noecho();
     timeout(-1);
-    signal(SIGINT, signalHandler);
+    keypad(stdscr, TRUE);
+    curs_set(0);
+    // signal(SIGINT, signalHandler);
 
     int input;
     while(true){
         display();
         input = getch();
         if(input ==  27){
-            printf("Exiting...");
+            printf("\nExiting...");
             break;
         }
             if(insertState){
                 switch (input){
-            case 127:
+            case KEY_BACKSPACE:
                 deleteCharacter();
                 break;
                 case 24:
                     toggleCursorState();
                     break;
-            default:
-                insertCharacter(input);
-                break;
+                case KEY_LEFT:
+                    if(cursor.col > 0){
+                        moveCursor(cursor.row, cursor.col - 1);
+                    }
+                    break;
+                default:
+                    insertCharacter(input);
+                    break;
             }}
             else if (!insertState){
                 switch(input){
                 case 'h':
                     if(cursor.col > 0){
                     moveCursor(cursor.row, cursor.col - 1);
-                    break;
-                    }else if(cursor.col == 0){
-                        break;
                     }
+                    break;
                 case 'l':
                     moveCursor(cursor.row, cursor.col + 1);
                     break;
@@ -111,6 +116,12 @@ void TextEditor::run(){
                     break;
                 case 'k':
                     moveCursor(cursor.row - 1, cursor.col);
+                    break;
+                case 'i':
+                    toggleCursorState();
+                    break;
+                case 'x':
+                    deleteCharacter();
                     break;
                 // case 'u':
                 //     undo();
