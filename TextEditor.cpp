@@ -8,7 +8,6 @@ TextEditor::TextEditor() {
     insertState = true;
     cursor = { 0, 0 };
     selection = { { 0, 0 }, { 0, 0 } };
-    lines.push_back("");
 }
 
 
@@ -44,6 +43,10 @@ void TextEditor::display(){
     }
 }
 
+//on enter press, lines.push_back() so you can move cursor up and down
+//make line go all the way to the left, idk how I will achieve this
+
+
 
 void TextEditor::toggleCursorState(){
     if(insertState){ //go to normal state
@@ -63,7 +66,7 @@ void TextEditor::deleteCharacter(){
     }
 }
 
-// void signalHandler(int signal){}
+void signalHandler(int signal){}
 
 void TextEditor::run(){
     bool currentInstance = this;
@@ -74,7 +77,7 @@ void TextEditor::run(){
     timeout(-1);
     keypad(stdscr, TRUE);
     curs_set(0);
-    // signal(SIGINT, signalHandler);
+    signal(SIGINT, signalHandler);
 
     int input;
     while(true){
@@ -97,6 +100,23 @@ void TextEditor::run(){
                         moveCursor(cursor.row, cursor.col - 1);
                     }
                     break;
+                case KEY_RIGHT:
+                        moveCursor(cursor.row, cursor.col + 1);
+                    break;
+                case KEY_DOWN:
+                        moveCursor(cursor.row+1, cursor.col);
+                    break;
+                case KEY_UP:
+                        moveCursor(cursor.row-1, cursor.col);
+                    break;
+                case KEY_ENTER:
+                case 10:
+                case 13:
+                    lines.push_back("");
+                    cursor = {cursor.row +1 ,0 };
+                    lines.push_back("");
+                    break;
+
                 default:
                     insertCharacter(input);
                     break;
@@ -112,10 +132,13 @@ void TextEditor::run(){
                     moveCursor(cursor.row, cursor.col + 1);
                     break;
                 case 'j':
-                    moveCursor(cursor.row + 1, cursor.col);
+                    printw("%d",cursor.row);
+                    // if (cursor.row - 1 < lines.size()) {
+                        moveCursor(cursor.row + 1, cursor.col);
+                    // }
                     break;
                 case 'k':
-                    moveCursor(cursor.row - 1, cursor.col);
+                        moveCursor(cursor.row - 1, cursor.col);
                     break;
                 case 'i':
                     toggleCursorState();
