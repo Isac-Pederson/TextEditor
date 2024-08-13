@@ -56,10 +56,10 @@ void TextEditor::toggleCursorState(){
     mvaddch(cursor.row, cursor.col, cursorIcon);
     refresh();
 }
-//continue working on this bs tomorrow >:(
+
 void TextEditor::deleteCharacter(){
-    if(lines[cursor.row].length() > 0){
-        lines[cursor.row].erase(--cursor.col);
+    if(lines[cursor.row].length() > 0 && cursor.col > 0){
+        lines[cursor.row].erase(--cursor.col, 1);
     }
 }
 
