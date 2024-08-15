@@ -8,9 +8,8 @@ TextEditor::TextEditor() {
     insertState = true;
     cursor = { 0, 0 };
     selection = { { 0, 0 }, { 0, 0 } };
+    lines.push_back("");
 }
-
-
 
 void TextEditor::moveCursor(int row, int col)
 {
@@ -32,13 +31,14 @@ void TextEditor::insertCharacter(char c){
 
 
 void TextEditor::display(){
-    system("clear");
     for (int i = 0; i < lines.size(); i++) { // to view cursor
         if (i == cursor.row){
-            std::cout << lines[i].substr(0, cursor.col) << cursorIcon << lines[i].substr(cursor.col) << std::endl;
+            mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+            addch(cursorIcon);
+            printw("%s",lines[i].substr(cursor.col).c_str());
         }
         else{
-            std::cout << lines[i] << std::endl;
+            mvprintw(i, 0, "%s", lines[i].c_str());
         }
     }
 }
@@ -61,6 +61,10 @@ void TextEditor::toggleCursorState(){
 }
 
 void TextEditor::deleteCharacter(){
+    if(cursor.row != 0 && lines[cursor.row].length() == 0){
+        cursor.row--;
+        moveCursor(cursor.row, lines[cursor.row].length());
+    }
     if(lines[cursor.row].length() > 0 && cursor.col > 0){
         lines[cursor.row].erase(--cursor.col, 1);
     }
@@ -81,7 +85,6 @@ void TextEditor::run(){
 
     int input;
     while(true){
-        display();
         input = getch();
         if(input ==  27){
             printf("\nExiting...");
@@ -112,9 +115,13 @@ void TextEditor::run(){
                 case KEY_ENTER:
                 case 10:
                 case 13:
-                    lines.push_back("");
-                    cursor = {cursor.row +1 ,0 };
-                    lines.push_back("");
+                    lines.insert(lines.begin() + cursor.row + 1, "");
+                    cursor.row++;
+                    cursor.col = 0;
+                    move(cursor.row, cursor.col);
+                    clear();
+                    display();
+                    refresh();
                     break;
 
                 default:
@@ -156,7 +163,12 @@ void TextEditor::run(){
                     toggleCursorState();
                     break;
         }}
-        refresh();
+            clear();
+            refresh();
+            display();
+        //     for (int i = 0; i < lines.size(); i++) {
+        //         mvprintw(i, 0, "%s", lines[i].c_str()); // Print each line at the correct row
+        // }
     }
 
         endwin();
