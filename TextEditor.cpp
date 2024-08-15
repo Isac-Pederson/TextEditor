@@ -21,8 +21,6 @@ void TextEditor::moveCursor(int row, int col)
    } 
 }
 
-//when toggling what mode, set the cursor variable from | to  ▮
-
 void TextEditor::insertCharacter(char c){
     lines[cursor.row].insert(cursor.col, 1, c);
     mvaddch(cursor.row, cursor.col++, c);
@@ -42,10 +40,6 @@ void TextEditor::display(){
         }
     }
 }
-
-//on enter press, lines.push_back() so you can move cursor up and down
-//make line go all the way to the left, idk how I will achieve this
-
 
 
 void TextEditor::toggleCursorState(){
@@ -139,10 +133,7 @@ void TextEditor::run(){
                     moveCursor(cursor.row, cursor.col + 1);
                     break;
                 case 'j':
-                    printw("%d",cursor.row);
-                    // if (cursor.row - 1 < lines.size()) {
                         moveCursor(cursor.row + 1, cursor.col);
-                    // }
                     break;
                 case 'k':
                         moveCursor(cursor.row - 1, cursor.col);
@@ -166,9 +157,6 @@ void TextEditor::run(){
             clear();
             refresh();
             display();
-        //     for (int i = 0; i < lines.size(); i++) {
-        //         mvprintw(i, 0, "%s", lines[i].c_str()); // Print each line at the correct row
-        // }
     }
 
         endwin();
