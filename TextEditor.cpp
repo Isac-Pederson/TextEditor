@@ -23,8 +23,20 @@ void TextEditor::moveCursor(int row, int col)
 
 void TextEditor::insertCharacter(char c){
     lines[cursor.row].insert(cursor.col, 1, c);
-    mvaddch(cursor.row, cursor.col++, c);
-};
+
+    if(cursor.col >= COLS){
+    
+        cursor.row++;
+        cursor.col = 0;
+
+        if (cursor.row >= lines.size()){
+            lines.push_back("");
+        }
+        mvaddch(cursor.row, cursor.col, c);
+    }else{
+        mvaddch(cursor.row, cursor.col++, c);
+    }
+}
 
 
 
@@ -63,6 +75,14 @@ void TextEditor::deleteCharacter(){
         lines[cursor.row].erase(--cursor.col, 1);
     }
 }
+
+void TextEditor::newLine(){
+    cursor.row++;
+    lines.insert(lines.begin() + cursor.row, "");
+    cursor.col = 0;
+    move(cursor.row, cursor.col);
+}
+
 
 void signalHandler(int signal){}
 
@@ -109,17 +129,19 @@ void TextEditor::run(){
                 case KEY_ENTER:
                 case 10:
                 case 13:
-                    lines.insert(lines.begin() + cursor.row + 1, "");
-                    cursor.row++;
-                    cursor.col = 0;
-                    move(cursor.row, cursor.col);
+                    newLine();
+                    break;
+                case KEY_SLEFT:
+                    newLine();
+                    break;
+                case KEY_SRIGHT:
+                    break;
+                default:
+                    insertCharacter(input);
+                    printf("%d",cursor.row);
                     clear();
                     display();
                     refresh();
-                    break;
-
-                default:
-                    insertCharacter(input);
                     break;
             }}
             else if (!insertState){

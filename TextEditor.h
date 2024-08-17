@@ -31,6 +31,7 @@ class TextEditor{
 
     public:
         TextEditor();
+        void newLine();
         void moveCursor(int row, int col);
         void insertCharacter(char c);
         void deleteCharacter();
