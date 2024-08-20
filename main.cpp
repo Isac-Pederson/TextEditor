@@ -1,5 +1,4 @@
 #include "TextEditor.h"
-#include <csignal>
 
 
 

@@ -25,6 +25,7 @@ class TextEditor{
         std::stack<std::vector<std::string>> undoStack;
         std::stack<std::vector<std::string>> redoStack;
         bool insertState;
+        bool isHighlighted;
         char cursorIcon;
         void saveStateForUndo();
 

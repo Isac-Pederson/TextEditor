@@ -9,6 +9,7 @@ TextEditor::TextEditor() {
     cursor = { 0, 0 };
     selection = { { 0, 0 }, { 0, 0 } };
     lines.push_back("");
+    isHighlighted = false;
 }
 
 void TextEditor::moveCursor(int row, int col)
@@ -41,8 +42,17 @@ void TextEditor::insertCharacter(char c){
 
 
 void TextEditor::display(){
-    for (int i = 0; i < lines.size(); i++) { // to view cursor
-        if (i == cursor.row){
+    for (int i = 0; i < lines.size(); i++) {
+        //got highlight to semi work but need to make it to where it only works when SHIFT L || R Arrow Key is being pressed
+        //and also only highlight the character the cursor passes
+        if (i == cursor.row && isHighlighted){
+            mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+            addch(cursorIcon);
+            attron(A_REVERSE);
+            printw("%s", lines[i].substr(cursor.col).c_str());
+            attroff(A_REVERSE);
+        }
+        else if (i == cursor.row){
             mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
             addch(cursorIcon);
             printw("%s",lines[i].substr(cursor.col).c_str());
@@ -101,13 +111,15 @@ void TextEditor::run(){
     while(true){
         input = getch();
         if(input ==  27){
-            printf("\nExiting...");
+            printw("\nExiting...");
             break;
         }
+        char temp[2];
             if(insertState){
                 switch (input){
             case KEY_BACKSPACE:
                 deleteCharacter();
+                clear();
                 break;
                 case 24:
                     toggleCursorState();
@@ -129,19 +141,20 @@ void TextEditor::run(){
                 case KEY_ENTER:
                 case 10:
                 case 13:
+                    clear();
                     newLine();
                     break;
                 case KEY_SLEFT:
-                    newLine();
+                    if(cursor.col > 0){
+                        moveCursor(cursor.row, --cursor.col);
+                        isHighlighted = true;
+                    }
                     break;
                 case KEY_SRIGHT:
+                    isHighlighted = false;
                     break;
                 default:
                     insertCharacter(input);
-                    printf("%d",cursor.row);
-                    clear();
-                    display();
-                    refresh();
                     break;
             }}
             else if (!insertState){
@@ -176,10 +189,40 @@ void TextEditor::run(){
                     toggleCursorState();
                     break;
         }}
-            clear();
+            // clear();
             refresh();
             display();
     }
 
         endwin();
 }
+
+
+//under CASE SHIFTLEFTARROW:
+                    // attroff(A_REVERSE);
+                    // refresh();
+
+                    // for each character pressed from start position to cursor should be highlighted
+                        // if (lines[cursor.row][cursor.col] == ++cursor.col){
+                            // attron(A_REVERSE);
+                        // }
+                    
+                    // temp[0] = { lines[cursor.row][cursor.col] };
+                    // temp[1] = '\0';
+                    // mvprintw(cursor.row, cursor.col +1, lines[cursor.row].substr(0, cursor.col).c_str());
+                    // attroff(A_REVERSE);
+                    // refresh();
+                    
+                    //ATTEMPT 2:
+                        // for (int i = 0; i < lines.size(); i++) { // to view cursor
+                        //     if (i == cursor.row){
+                        //     mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+                        //     addch(cursorIcon);
+                        //     attron(A_REVERSE);
+                        //     printw("%s", lines[i].substr(cursor.col).c_str());
+                        //     attroff(A_REVERSE);
+                        //     } else {
+                        //         mvprintw(i, 0, "%s", lines[i].c_str());
+                        //     }
+                        // }
+                        // refresh();
