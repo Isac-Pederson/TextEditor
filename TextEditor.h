@@ -25,13 +25,15 @@ class TextEditor{
         std::stack<std::vector<std::string>> undoStack;
         std::stack<std::vector<std::string>> redoStack;
         bool insertState;
-        bool isHighlighted;
+        bool isLeftHighlighted;
+        bool isRightHighlighted;
         char cursorIcon;
         void saveStateForUndo();
 
 
     public:
         TextEditor();
+        void highlightText(int i, int direction1);
         void newLine();
         void moveCursor(int row, int col);
         void insertCharacter(char c);

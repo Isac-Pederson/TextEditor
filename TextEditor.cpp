@@ -9,7 +9,8 @@ TextEditor::TextEditor() {
     cursor = { 0, 0 };
     selection = { { 0, 0 }, { 0, 0 } };
     lines.push_back("");
-    isHighlighted = false;
+    isLeftHighlighted = false;
+    isRightHighlighted = false;
 }
 
 void TextEditor::moveCursor(int row, int col)
@@ -42,24 +43,50 @@ void TextEditor::insertCharacter(char c){
 
 
 void TextEditor::display(){
+    int const right = 0;
+    int const left = 1;
     for (int i = 0; i < lines.size(); i++) {
         //got highlight to semi work but need to make it to where it only works when SHIFT L || R Arrow Key is being pressed
         //and also only highlight the character the cursor passes
-        if (i == cursor.row && isHighlighted){
-            mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
-            addch(cursorIcon);
-            attron(A_REVERSE);
-            printw("%s", lines[i].substr(cursor.col).c_str());
-            attroff(A_REVERSE);
+        if (i == cursor.row && isLeftHighlighted){
+            highlightText(i, left);
         }
-        else if (i == cursor.row){
+        else if (i == cursor.row && isRightHighlighted){
+            highlightText(i, right);
+        }
+        else if (i == cursor.row) {
             mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
             addch(cursorIcon);
             printw("%s",lines[i].substr(cursor.col).c_str());
         }
-        else{
+         else {
             mvprintw(i, 0, "%s", lines[i].c_str());
         }
+    }
+}
+
+//store each character in array and remove the values when hitting delete. Change to empty when isHighlighted = false 
+
+void TextEditor::highlightText(int i, int direction){
+    int const right = 0;
+    int const left = 1;
+    switch (direction) {
+    case right:
+    // work on this shit
+    
+        // attron(A_REVERSE);
+        // mvprintw(i, 0, "%s", lines[i].substr(lines[i][--cursor.col], cursor.col).c_str());
+        // attroff(A_REVERSE);
+        // addch(cursorIcon);
+        // printw("%s", lines[i].substr(cursor.col).c_str());
+        // break;
+    case left:
+        mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+        addch(cursorIcon);
+        attron(A_REVERSE);
+        printw("%s", lines[i].substr(cursor.col, 1).c_str());
+        attroff(A_REVERSE);
+        break;
     }
 }
 
@@ -126,17 +153,25 @@ void TextEditor::run(){
                     break;
                 case KEY_LEFT:
                     if(cursor.col > 0){
+                        isLeftHighlighted = false;
+                        isRightHighlighted = false;
                         moveCursor(cursor.row, cursor.col - 1);
                     }
                     break;
                 case KEY_RIGHT:
-                        moveCursor(cursor.row, cursor.col + 1);
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
+                    moveCursor(cursor.row, cursor.col + 1);
                     break;
                 case KEY_DOWN:
-                        moveCursor(cursor.row+1, cursor.col);
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
+                    moveCursor(cursor.row+1, cursor.col);
                     break;
                 case KEY_UP:
-                        moveCursor(cursor.row-1, cursor.col);
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
+                    moveCursor(cursor.row-1, cursor.col);
                     break;
                 case KEY_ENTER:
                 case 10:
@@ -147,11 +182,14 @@ void TextEditor::run(){
                 case KEY_SLEFT:
                     if(cursor.col > 0){
                         moveCursor(cursor.row, --cursor.col);
-                        isHighlighted = true;
+                        isLeftHighlighted = true;
+                        isRightHighlighted = false;
                     }
                     break;
                 case KEY_SRIGHT:
-                    isHighlighted = false;
+                    moveCursor(cursor.row, ++cursor.col);
+                    isRightHighlighted = true;
+                    isLeftHighlighted = false;
                     break;
                 default:
                     insertCharacter(input);
@@ -161,23 +199,41 @@ void TextEditor::run(){
                 switch(input){
                 case 'h':
                     if(cursor.col > 0){
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
                     moveCursor(cursor.row, cursor.col - 1);
+                    clear();
                     }
                     break;
                 case 'l':
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
                     moveCursor(cursor.row, cursor.col + 1);
+                    clear();
                     break;
                 case 'j':
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
                         moveCursor(cursor.row + 1, cursor.col);
+                    clear();
                     break;
                 case 'k':
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
                         moveCursor(cursor.row - 1, cursor.col);
+                    clear();
                     break;
                 case 'i':
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
                     toggleCursorState();
+                    clear();
                     break;
                 case 'x':
+                    isLeftHighlighted = false;
+                    isRightHighlighted = false;
                     deleteCharacter();
+                    clear();
                     break;
                 // case 'u':
                 //     undo();
