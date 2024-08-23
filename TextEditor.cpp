@@ -1,6 +1,5 @@
 #include "TextEditor.h"
 #include <ncurses.h>
-#include <csignal>
 
 
 TextEditor::TextEditor() {
@@ -9,8 +8,8 @@ TextEditor::TextEditor() {
     cursor = { 0, 0 };
     selection = { { 0, 0 }, { 0, 0 } };
     lines.push_back("");
-    isLeftHighlighted = false;
-    isRightHighlighted = false;
+    isSelecting = false;
+    selectionDirection = RIGHT;
 }
 
 void TextEditor::moveCursor(int row, int col)
@@ -24,6 +23,11 @@ void TextEditor::moveCursor(int row, int col)
 }
 
 void TextEditor::insertCharacter(char c){
+
+    if(isSelecting){
+        deleteSelection();
+    }
+
     lines[cursor.row].insert(cursor.col, 1, c);
 
     if(cursor.col >= COLS){
@@ -41,89 +45,55 @@ void TextEditor::insertCharacter(char c){
 }
 
 
+void TextEditor::deleteSelection(){
+    int startCol = std::min(selection.start.col, selection.end.col);
+    int endCol = std::max(selection.start.col, selection.end.col);
+    lines[cursor.row].erase(startCol,endCol - startCol);
+    cursor.col = startCol;
+    isSelecting = false;
+}
 
 void TextEditor::display(){
-    int const right = 0;
-    int const left = 1;
+    clear();
     for (int i = 0; i < lines.size(); i++) {
-        //got highlight to semi work but need to make it to where it only works when SHIFT L || R Arrow Key is being pressed
-        //and also only highlight the character the cursor passes
-        if (i == cursor.row && isLeftHighlighted){
-            highlightText(i, left);
-        }
-        else if (i == cursor.row && isRightHighlighted){
-            highlightText(i, right);
+        if (i == cursor.row && isSelecting){
+            highlightText(i);
         }
         else if (i == cursor.row) {
-            mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+            mvprintw(i, 0, "%s", lines[i].c_str());
+            move(i, cursor.col);
             addch(cursorIcon);
-            printw("%s",lines[i].substr(cursor.col).c_str());
-        }
-         else {
+        } else {
             mvprintw(i, 0, "%s", lines[i].c_str());
         }
     }
+    refresh();
 }
 
 //store each character in array and remove the values when hitting delete. Change to empty when isHighlighted = false 
 
-void TextEditor::highlightText(int row, int direction){
+void TextEditor::highlightText(int row){
+    int startCol = std::min(selection.start.col, selection.end.col);
+    int endCol = std::max(selection.start.col, selection.end.col);
 
-    // if (direction == 0){
-    //     moveCursor(cursor.row, ++cursor.col);
-    //     selection.end = cursor;
-    //     mvprintw(row, 0, "%s", lines[row].substr(0, cursor.col).c_str());
-    //     attron(A_REVERSE);
-    //     printw("%s", lines[row].substr(cursor.col, 1).c_str());
-    //     attroff(A_REVERSE);
-    //     addch(cursorIcon);
-    //     printw("%s", lines[row].substr(cursor.col).c_str());
+    startCol = std::max(0, startCol);
+    endCol = std::min(static_cast<int>(lines[row].length()), endCol);
 
-    // }
-    if (direction == 0) { // Moving right
-    moveCursor(cursor.row, ++cursor.col); // Move cursor right
-    selection.end = cursor; // Set selection end to new cursor position
-    
-    // Print up to the cursor position (before highlighting)
-    mvprintw(row, 0, "%s", lines[row].substr(0, cursor.col - 1).c_str());
-    
-    // Highlight the character at cursor.col
+    mvprintw(row, 0, "%s", lines[row].substr(0, startCol).c_str());
+
     attron(A_REVERSE);
-    printw("%c", lines[row][cursor.col - 1]);
+    printw("%s", lines[row].substr(startCol, endCol-startCol).c_str());
     attroff(A_REVERSE);
-    
-    // Add cursor icon and print the rest of the line
+
+    printw("%s", lines[row].substr(endCol).c_str());
+
+    move(row, cursor.col);
     addch(cursorIcon);
-    printw("%s", lines[row].substr(cursor.col).c_str());
 }
-
-    else if (direction == 1){
-        selection.start = cursor;
-        selection.end = cursor;
-        if(cursor.col > 0){
-        moveCursor(cursor.row, --cursor.col);
-        selection.end = cursor;   
-        mvprintw(row, 0, "%s", lines[row].substr(0, selection.end.col).c_str());
-        addch(cursorIcon);
-        attron(A_REVERSE);
-        printw("%s", lines[row].substr(selection.end.col, 1).c_str());
-        attroff(A_REVERSE);
-        }
-    }
-     
-}
-
 
 void TextEditor::toggleCursorState(){
-    if(insertState){ //go to normal state
-        cursorIcon = '_';
-        insertState = false;
-    } else if (!insertState) { // go to insertState
-        cursorIcon = '|';
-        insertState = true;
-    }
-    mvaddch(cursor.row, cursor.col, cursorIcon);
-    refresh();
+    insertState = !insertState;
+    cursorIcon = insertState ? '|' : '_';
 }
 
 void TextEditor::deleteCharacter(){
@@ -136,6 +106,25 @@ void TextEditor::deleteCharacter(){
     }
 }
 
+void TextEditor::startSelection(Direction dir){
+    if(!isSelecting){
+        isSelecting = true;
+        selectionDirection = dir;
+        selection.start = cursor;
+        selection.end = cursor;
+    }
+    updateSelection(dir);
+}
+
+void TextEditor::updateSelection(Direction dir){
+    if(dir == LEFT && cursor.col > 0){
+        cursor.col--;
+    }else if(dir == RIGHT && cursor.col < lines[cursor.row].length()){
+        cursor.col++;
+    }
+    selection.end = cursor;
+}
+
 void TextEditor::newLine(){
     cursor.row++;
     lines.insert(lines.begin() + cursor.row, "");
@@ -143,189 +132,104 @@ void TextEditor::newLine(){
     move(cursor.row, cursor.col);
 }
 
+void TextEditor::moveCursorLeft(){
+    if(isSelecting){
+        updateSelection(LEFT);
+    }else if(cursor.col > 0){
+        cursor.col--;
+    }
+}
 
-void signalHandler(int signal){}
+void TextEditor::moveCursorRight(){
+    if(isSelecting){
+        updateSelection(RIGHT);
+    }else if(cursor.col < lines[cursor.row].length()){
+       cursor.col++;
+    }
+}
+
+void TextEditor::moveCursorUp(){
+    if (cursor.row > 0){
+        cursor.row--;
+        cursor.col = std::min(cursor.col, static_cast<int>(lines[cursor.row].length()));
+    }
+}
+
+void TextEditor::moveCursorDown(){
+    if (cursor.row < lines.size() -1 ){
+        cursor.row++;
+        cursor.col = std::min(cursor.col, static_cast<int>(lines[cursor.row].length()));
+    }
+}
+
+
+
 
 void TextEditor::run(){
-    bool currentInstance = this;
-    lines.push_back("");
     initscr(); // Initialize ncurses
     cbreak(); // Disable line buffering
     noecho();
-    timeout(-1);
     keypad(stdscr, TRUE);
     curs_set(0);
-    signal(SIGINT, signalHandler);
 
     int input;
     while(true){
+        display();
         input = getch();
+
+
         if(input ==  27){
             printw("\nExiting...");
             break;
         }
-        char temp[2];
-            if(insertState){
-                switch (input){
-            case KEY_BACKSPACE:
-                deleteCharacter();
-                clear();
-                break;
-                case 24:
-                    toggleCursorState();
-                    break;
-                case KEY_LEFT:
-                    if(cursor.col > 0){
-                        isLeftHighlighted = false;
-                        isRightHighlighted = false;
-                        moveCursor(cursor.row, cursor.col - 1);
-                    }
-                    break;
-                case KEY_RIGHT:
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    moveCursor(cursor.row, cursor.col + 1);
-                    break;
-                case KEY_DOWN:
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    moveCursor(cursor.row+1, cursor.col);
-                    break;
-                case KEY_UP:
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    moveCursor(cursor.row-1, cursor.col);
-                    break;
-                case KEY_ENTER:
-                case 10:
-                case 13:
-                    clear();
-                    newLine();
-                    break;
-                case KEY_SLEFT:
-                    if(cursor.col > 0){
-                        isLeftHighlighted = true;
-                        isRightHighlighted = false;
-                    }
-                    break;
-                case KEY_SRIGHT:
-                    isRightHighlighted = true;
-                    isLeftHighlighted = false;
-                    break;
-                default:
-                    insertCharacter(input);
-                    break;
-            }}
-            else if (!insertState){
-                switch(input){
-                case 'h':
-                    if(cursor.col > 0){
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    moveCursor(cursor.row, cursor.col - 1);
-                    clear();
-                    }
-                    break;
-                case 'l':
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    moveCursor(cursor.row, cursor.col + 1);
-                    clear();
-                    break;
-                case 'j':
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                        moveCursor(cursor.row + 1, cursor.col);
-                    clear();
-                    break;
-                case 'k':
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                        moveCursor(cursor.row - 1, cursor.col);
-                    clear();
-                    break;
-                case 'i':
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    toggleCursorState();
-                    clear();
-                    break;
-                case 'x':
-                    isLeftHighlighted = false;
-                    isRightHighlighted = false;
-                    deleteCharacter();
-                    clear();
-                    break;
-                // case 'u':
-                //     undo();
-                //     break;
-                // case 'r':
-                //     redo();
-                //     break;
-                case 24:
-                    toggleCursorState();
-                    break;
-        }}
-            refresh();
-            display();
-    }
 
-        endwin();
+            if(insertState){
+                if(input == KEY_BACKSPACE){
+                    if(isSelecting){
+                        deleteSelection();
+                    }
+                    deleteCharacter();
+                }else if(input == 24){//toggle CTRL+X
+                    toggleCursorState();
+                }else if(input == KEY_LEFT){
+                    moveCursorLeft();
+                }else if(input == KEY_RIGHT){
+                    moveCursorRight();
+                }else if(input == KEY_DOWN){
+                    moveCursorDown();
+                }else if(input == KEY_UP){
+                    moveCursorUp();
+                }else if (input == KEY_ENTER || input == 10 || input == 13){
+                    newLine();
+                }else if (input == KEY_SLEFT){
+                    startSelection(LEFT);
+                }else if (input == KEY_SRIGHT){
+                    startSelection(RIGHT);
+                }else{
+                    insertCharacter(static_cast<char>(input));
+                }
+            }else{
+                if(input == 'h'){
+                    moveCursorLeft();
+                }else if(input == 24){//toggle CTRL+X
+                    toggleCursorState();
+                }else if(input == 'l'){
+                    moveCursorRight();
+                }else if(input == 'j'){
+                    moveCursorDown();
+                }else if(input == 'k'){
+                    moveCursorUp();
+                }else if(input == 'x'){
+                    deleteCharacter();
+                }else if(input == 'u'){
+                    // redo();
+                }else if(input == 'k'){
+                    // undo();
+            }
+            }
+    }
+            refresh();
+            endwin();
 }
 
 
-//under CASE SHIFTLEFTARROW:
-                    // attroff(A_REVERSE);
-                    // refresh();
-
-                    // for each character pressed from start position to cursor should be highlighted
-                        // if (lines[cursor.row][cursor.col] == ++cursor.col){
-                            // attron(A_REVERSE);
-                        // }
-                    
-                    // temp[0] = { lines[cursor.row][cursor.col] };
-                    // temp[1] = '\0';
-                    // mvprintw(cursor.row, cursor.col +1, lines[cursor.row].substr(0, cursor.col).c_str());
-                    // attroff(A_REVERSE);
-                    // refresh();
-                    
-                    //ATTEMPT 2:
-                        // for (int i = 0; i < lines.size(); i++) { // to view cursor
-                        //     if (i == cursor.row){
-                        //     mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
-                        //     addch(cursorIcon);
-                        //     attron(A_REVERSE);
-                        //     printw("%s", lines[i].substr(cursor.col).c_str());
-                        //     attroff(A_REVERSE);
-                        //     } else {
-                        //         mvprintw(i, 0, "%s", lines[i].c_str());
-                        //     }
-                        // }
-                        // refresh();
-
-    // attron(A_REVERSE);
-    // mvprintw(row,0,"%s", lines[row].substr(selection.start.col, selection.end.col - selection.start.col +1).c_str());
-    // attroff(A_REVERSE);
-
-
-    // int const right = 0;
-    // int const left = 1;
-    // switch (direction) {
-    // case right:
-    // // work on this shit
-
-    //     mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
-    //     attron(A_REVERSE);
-    //     printw("%s", lines[i].substr(cursor.col, 1).c_str());
-    //     attroff(A_REVERSE);
-    //     addch(cursorIcon);
-    //     printw("%s", lines[i].substr(cursor.col).c_str());
-    //     break;
-    // case left:
-    //     mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
-    //     addch(cursorIcon);
-    //     attron(A_REVERSE);
-    //     printw("%s", lines[i].substr(cursor.col, 1).c_str());
-    //     attroff(A_REVERSE);
-    //     break;
-    // }

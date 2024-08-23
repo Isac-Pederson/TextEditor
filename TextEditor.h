@@ -17,6 +17,11 @@ struct Selection{
     Cursor end;
 };
 
+enum Direction {
+    LEFT = -1,
+    RIGHT = 1
+};
+
 class TextEditor{
     private:
         std::vector<std::string> lines;
@@ -25,15 +30,15 @@ class TextEditor{
         std::stack<std::vector<std::string>> undoStack;
         std::stack<std::vector<std::string>> redoStack;
         bool insertState;
-        bool isLeftHighlighted;
-        bool isRightHighlighted;
+        bool isSelecting;
+        Direction selectionDirection;
         char cursorIcon;
         void saveStateForUndo();
 
 
     public:
         TextEditor();
-        void highlightText(int i, int direction1);
+        void highlightText(int row);
         void newLine();
         void moveCursor(int row, int col);
         void insertCharacter(char c);
@@ -44,5 +49,12 @@ class TextEditor{
         void display();
         void run();
         void toggleCursorState();
+        void moveCursorLeft();
+        void moveCursorRight();
+        void moveCursorUp();
+        void moveCursorDown();
+        void startSelection(Direction dir);
+        void updateSelection(Direction dir);
+        void deleteSelection();
 };
 #endif
