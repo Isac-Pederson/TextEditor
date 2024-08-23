@@ -67,27 +67,50 @@ void TextEditor::display(){
 
 //store each character in array and remove the values when hitting delete. Change to empty when isHighlighted = false 
 
-void TextEditor::highlightText(int i, int direction){
-    int const right = 0;
-    int const left = 1;
-    switch (direction) {
-    case right:
-    // work on this shit
+void TextEditor::highlightText(int row, int direction){
+
+    // if (direction == 0){
+    //     moveCursor(cursor.row, ++cursor.col);
+    //     selection.end = cursor;
+    //     mvprintw(row, 0, "%s", lines[row].substr(0, cursor.col).c_str());
+    //     attron(A_REVERSE);
+    //     printw("%s", lines[row].substr(cursor.col, 1).c_str());
+    //     attroff(A_REVERSE);
+    //     addch(cursorIcon);
+    //     printw("%s", lines[row].substr(cursor.col).c_str());
+
+    // }
+    if (direction == 0) { // Moving right
+    moveCursor(cursor.row, ++cursor.col); // Move cursor right
+    selection.end = cursor; // Set selection end to new cursor position
     
-        // attron(A_REVERSE);
-        // mvprintw(i, 0, "%s", lines[i].substr(lines[i][--cursor.col], cursor.col).c_str());
-        // attroff(A_REVERSE);
-        // addch(cursorIcon);
-        // printw("%s", lines[i].substr(cursor.col).c_str());
-        // break;
-    case left:
-        mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+    // Print up to the cursor position (before highlighting)
+    mvprintw(row, 0, "%s", lines[row].substr(0, cursor.col - 1).c_str());
+    
+    // Highlight the character at cursor.col
+    attron(A_REVERSE);
+    printw("%c", lines[row][cursor.col - 1]);
+    attroff(A_REVERSE);
+    
+    // Add cursor icon and print the rest of the line
+    addch(cursorIcon);
+    printw("%s", lines[row].substr(cursor.col).c_str());
+}
+
+    else if (direction == 1){
+        selection.start = cursor;
+        selection.end = cursor;
+        if(cursor.col > 0){
+        moveCursor(cursor.row, --cursor.col);
+        selection.end = cursor;   
+        mvprintw(row, 0, "%s", lines[row].substr(0, selection.end.col).c_str());
         addch(cursorIcon);
         attron(A_REVERSE);
-        printw("%s", lines[i].substr(cursor.col, 1).c_str());
+        printw("%s", lines[row].substr(selection.end.col, 1).c_str());
         attroff(A_REVERSE);
-        break;
+        }
     }
+     
 }
 
 
@@ -181,13 +204,11 @@ void TextEditor::run(){
                     break;
                 case KEY_SLEFT:
                     if(cursor.col > 0){
-                        moveCursor(cursor.row, --cursor.col);
                         isLeftHighlighted = true;
                         isRightHighlighted = false;
                     }
                     break;
                 case KEY_SRIGHT:
-                    moveCursor(cursor.row, ++cursor.col);
                     isRightHighlighted = true;
                     isLeftHighlighted = false;
                     break;
@@ -245,7 +266,6 @@ void TextEditor::run(){
                     toggleCursorState();
                     break;
         }}
-            // clear();
             refresh();
             display();
     }
@@ -282,3 +302,30 @@ void TextEditor::run(){
                         //     }
                         // }
                         // refresh();
+
+    // attron(A_REVERSE);
+    // mvprintw(row,0,"%s", lines[row].substr(selection.start.col, selection.end.col - selection.start.col +1).c_str());
+    // attroff(A_REVERSE);
+
+
+    // int const right = 0;
+    // int const left = 1;
+    // switch (direction) {
+    // case right:
+    // // work on this shit
+
+    //     mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+    //     attron(A_REVERSE);
+    //     printw("%s", lines[i].substr(cursor.col, 1).c_str());
+    //     attroff(A_REVERSE);
+    //     addch(cursorIcon);
+    //     printw("%s", lines[i].substr(cursor.col).c_str());
+    //     break;
+    // case left:
+    //     mvprintw(i, 0, "%s", lines[i].substr(0, cursor.col).c_str());
+    //     addch(cursorIcon);
+    //     attron(A_REVERSE);
+    //     printw("%s", lines[i].substr(cursor.col, 1).c_str());
+    //     attroff(A_REVERSE);
+    //     break;
+    // }
