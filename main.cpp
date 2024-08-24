@@ -1,5 +1,6 @@
 #include "TextEditor.h"
-
+#include <iostream>
+#include <fstream>
 
 
 int main(){

@@ -22,6 +22,33 @@ void TextEditor::moveCursor(int row, int col)
    } 
 }
 
+void TextEditor::undo(){
+    if(undoStack.size() != 0){
+        lines = undoStack.top();
+        cursor = cursorPosition.top(); 
+
+        redoStack.push(undoStack.top());
+        redoCursorPos.push(cursorPosition.top());
+
+        undoStack.pop();
+        cursorPosition.pop();
+    }
+}
+
+void TextEditor::redo(){
+    if(redoStack.size() != 0){
+        lines = redoStack.top();
+        cursor = redoCursorPos.top();
+
+        undoStack.push(redoStack.top());
+        cursorPosition.push(redoCursorPos.top());
+
+        redoStack.pop();
+        redoCursorPos.pop();
+    }
+}
+
+
 void TextEditor::insertCharacter(char c){
 
     if(isSelecting){
@@ -42,6 +69,11 @@ void TextEditor::insertCharacter(char c){
     }else{
         mvaddch(cursor.row, cursor.col++, c);
     }
+
+    if(c == ' '){
+        undoStack.push(lines);
+        cursorPosition.push(cursor);
+    }
 }
 
 
@@ -51,6 +83,8 @@ void TextEditor::deleteSelection(){
     lines[cursor.row].erase(startCol,endCol - startCol);
     cursor.col = startCol;
     isSelecting = false;
+    undoStack.push(lines);
+    cursorPosition.push(cursor);
 }
 
 void TextEditor::display(){
@@ -103,6 +137,8 @@ void TextEditor::deleteCharacter(){
     }
     if(lines[cursor.row].length() > 0 && cursor.col > 0){
         lines[cursor.row].erase(--cursor.col, 1);
+        undoStack.push(lines);
+        cursorPosition.push(cursor);
     }
 }
 
@@ -221,10 +257,10 @@ void TextEditor::run(){
                     moveCursorUp();
                 }else if(input == 'x'){
                     deleteCharacter();
+                }else if(input == 'r'){
+                    redo();
                 }else if(input == 'u'){
-                    // redo();
-                }else if(input == 'k'){
-                    // undo();
+                    undo();
             }
             }
     }

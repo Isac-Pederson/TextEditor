@@ -27,6 +27,8 @@ class TextEditor{
         std::vector<std::string> lines;
         Cursor cursor;
         Selection selection;
+        std::stack<Cursor> cursorPosition;
+        std::stack<Cursor> redoCursorPos;
         std::stack<std::vector<std::string>> undoStack;
         std::stack<std::vector<std::string>> redoStack;
         bool insertState;
