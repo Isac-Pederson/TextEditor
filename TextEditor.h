@@ -40,6 +40,8 @@ class TextEditor{
 
     public:
         TextEditor();
+        void loadFile(const std::string& fileName);
+        void saveFile();
         void highlightText(int row);
         void newLine();
         void moveCursor(int row, int col);

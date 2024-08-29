@@ -1,5 +1,8 @@
 #include "TextEditor.h"
+#include <iostream>
 #include <ncurses.h>
+#include <string>
+#include <fstream>
 
 
 TextEditor::TextEditor() {
@@ -198,8 +201,42 @@ void TextEditor::moveCursorDown(){
     }
 }
 
+void TextEditor::loadFile(const std::string& fileName)
+{
+    std::ifstream file(fileName);
+    
+    if(!file.is_open()){
+        printw("Error: Could not open file %s\n", fileName.c_str());
+        return;
+    }
 
+    lines.clear();
+    std::string line;
+    while(std::getline(file,line)){
+        lines.push_back(line);
+    }
 
+    file.close();
+    cursor = { 0, 0 };
+}
+
+void TextEditor::saveFile(){
+    std::string fileName;
+    std::cout << '\n'
+              << "filename: ";
+
+    std::cin >> fileName;
+    
+    std::ofstream MyFile(fileName + ".txt");
+    std::string contents;
+
+    for (int i = 0; i < lines.size(); i++){
+        contents.append(lines[i] + '\n');
+    }
+    MyFile << contents;
+
+    MyFile.close();
+}
 
 void TextEditor::run(){
     initscr(); // Initialize ncurses
@@ -256,7 +293,7 @@ void TextEditor::run(){
                 }else if(input == 'k'){
                     moveCursorUp();
                 }else if(input == 'x'){
-                    deleteCharacter();
+                    saveFile();
                 }else if(input == 'r'){
                     redo();
                 }else if(input == 'u'){
